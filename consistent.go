@@ -91,7 +91,7 @@ func (c *Consistent) Get(name string) (string, error) {
 	return c.circle[c.sortedHashes[i]], nil
 }
 
-// Get two returns the two closest distinct elements to the name input in the circle.
+// GetTwo returns the two closest distinct elements to the name input in the circle.
 func (c *Consistent) GetTwo(name string) (string, string, error) {
 	if len(c.circle) == 0 {
 		return "", "", ErrEmptyCircle
