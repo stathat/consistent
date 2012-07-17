@@ -24,12 +24,15 @@ import (
 )
 
 type uints []uint32
+
 // Len returns the length of the uints array.
-func (x uints) Len() int           { return len(x) }
+func (x uints) Len() int { return len(x) }
+
 // Less returns true if element i is less than element j.
 func (x uints) Less(i, j int) bool { return x[i] < x[j] }
+
 // Swap exchanges elements i and j.
-func (x uints) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x uints) Swap(i, j int) { x[i], x[j] = x[j], x[i] }
 
 // ErrEmptyCircle is the error returned when trying to get an element when nothing has been added to hash.
 var ErrEmptyCircle = errors.New("empty circle")
@@ -54,7 +57,7 @@ func New() *Consistent {
 
 // eltKey generates a string key for an element with an index.
 func (c *Consistent) eltKey(elt string, idx int) string {
-        return fmt.Sprintf("%s|%d", elt, idx)
+	return fmt.Sprintf("%s|%d", elt, idx)
 }
 
 // Add inserts a string element in the consistent hash.
@@ -141,4 +144,3 @@ func (c *Consistent) updateSortedHashes() {
 	sort.Sort(hashes)
 	c.sortedHashes = hashes
 }
-
