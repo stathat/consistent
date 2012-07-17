@@ -18,9 +18,9 @@ package consistent
 
 import (
 	"errors"
-	"fmt"
 	"hash/crc32"
 	"sort"
+	"strconv"
 )
 
 type uints []uint32
@@ -57,7 +57,7 @@ func New() *Consistent {
 
 // eltKey generates a string key for an element with an index.
 func (c *Consistent) eltKey(elt string, idx int) string {
-	return fmt.Sprintf("%s|%d", elt, idx)
+	return elt + "|" + strconv.Itoa(idx)
 }
 
 // Add inserts a string element in the consistent hash.
