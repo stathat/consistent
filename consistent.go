@@ -43,6 +43,7 @@ type Consistent struct {
 	sortedHashes     uints
 	NumberOfReplicas int
 	count            int64
+	scratch          [64]byte
 }
 
 // New creates a new Consistent object with a default setting of 20 replicas for each entry.
@@ -133,6 +134,10 @@ func (c *Consistent) GetTwo(name string) (string, string, error) {
 }
 
 func (c *Consistent) hashKey(key string) uint32 {
+	if len(key) < 64 {
+		copy(c.scratch[:], key)
+		return crc32.ChecksumIEEE(c.scratch[:len(key)])
+	}
 	return crc32.ChecksumIEEE([]byte(key))
 }
 
