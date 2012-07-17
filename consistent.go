@@ -85,14 +85,19 @@ func (c *Consistent) Get(name string) (string, error) {
 		return "", ErrEmptyCircle
 	}
 	key := c.hashKey(name)
+	i := c.search(key)
+	return c.circle[c.sortedHashes[i]], nil
+}
+
+func (c *Consistent) search(key uint32) (i int) {
 	f := func(x int) bool {
 		return c.sortedHashes[x] > key
 	}
-	i := sort.Search(len(c.sortedHashes), f)
+	i = sort.Search(len(c.sortedHashes), f)
 	if i >= len(c.sortedHashes) {
 		i = 0
 	}
-	return c.circle[c.sortedHashes[i]], nil
+	return
 }
 
 // GetTwo returns the two closest distinct elements to the name input in the circle.
@@ -101,13 +106,7 @@ func (c *Consistent) GetTwo(name string) (string, string, error) {
 		return "", "", ErrEmptyCircle
 	}
 	key := c.hashKey(name)
-	f := func(x int) bool {
-		return c.sortedHashes[x] > key
-	}
-	i := sort.Search(len(c.sortedHashes), f)
-	if i >= len(c.sortedHashes) {
-		i = 0
-	}
+	i := c.search(key)
 	a := c.circle[c.sortedHashes[i]]
 
 	if c.count == 1 {
@@ -115,19 +114,14 @@ func (c *Consistent) GetTwo(name string) (string, string, error) {
 	}
 
 	start := i
-	i++
-	if i >= len(c.sortedHashes) {
-		i = 0
-	}
 	var b string
-	for i != start {
+	for i = start + 1; i != start; i++ {
+		if i >= len(c.sortedHashes) {
+			i = 0
+		}
 		b = c.circle[c.sortedHashes[i]]
 		if b != a {
 			break
-		}
-		i++
-		if i >= len(c.sortedHashes) {
-			i = 0
 		}
 	}
 	return a, b, nil
