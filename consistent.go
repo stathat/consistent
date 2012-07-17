@@ -18,18 +18,21 @@ package consistent
 
 import (
 	"errors"
-	"fmt"
 	"hash/crc32"
 	"sort"
+	"strconv"
 )
 
 type uints []uint32
+
 // Len returns the length of the uints array.
-func (x uints) Len() int           { return len(x) }
+func (x uints) Len() int { return len(x) }
+
 // Less returns true if element i is less than element j.
 func (x uints) Less(i, j int) bool { return x[i] < x[j] }
+
 // Swap exchanges elements i and j.
-func (x uints) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x uints) Swap(i, j int) { x[i], x[j] = x[j], x[i] }
 
 // ErrEmptyCircle is the error returned when trying to get an element when nothing has been added to hash.
 var ErrEmptyCircle = errors.New("empty circle")
@@ -40,6 +43,7 @@ type Consistent struct {
 	sortedHashes     uints
 	NumberOfReplicas int
 	count            int64
+	scratch          [64]byte
 }
 
 // New creates a new Consistent object with a default setting of 20 replicas for each entry.
@@ -54,7 +58,7 @@ func New() *Consistent {
 
 // eltKey generates a string key for an element with an index.
 func (c *Consistent) eltKey(elt string, idx int) string {
-        return fmt.Sprintf("%s|%d", elt, idx)
+	return elt + "|" + strconv.Itoa(idx)
 }
 
 // Add inserts a string element in the consistent hash.
@@ -81,14 +85,19 @@ func (c *Consistent) Get(name string) (string, error) {
 		return "", ErrEmptyCircle
 	}
 	key := c.hashKey(name)
+	i := c.search(key)
+	return c.circle[c.sortedHashes[i]], nil
+}
+
+func (c *Consistent) search(key uint32) (i int) {
 	f := func(x int) bool {
 		return c.sortedHashes[x] > key
 	}
-	i := sort.Search(len(c.sortedHashes), f)
+	i = sort.Search(len(c.sortedHashes), f)
 	if i >= len(c.sortedHashes) {
 		i = 0
 	}
-	return c.circle[c.sortedHashes[i]], nil
+	return
 }
 
 // GetTwo returns the two closest distinct elements to the name input in the circle.
@@ -97,13 +106,7 @@ func (c *Consistent) GetTwo(name string) (string, string, error) {
 		return "", "", ErrEmptyCircle
 	}
 	key := c.hashKey(name)
-	f := func(x int) bool {
-		return c.sortedHashes[x] > key
-	}
-	i := sort.Search(len(c.sortedHashes), f)
-	if i >= len(c.sortedHashes) {
-		i = 0
-	}
+	i := c.search(key)
 	a := c.circle[c.sortedHashes[i]]
 
 	if c.count == 1 {
@@ -111,34 +114,36 @@ func (c *Consistent) GetTwo(name string) (string, string, error) {
 	}
 
 	start := i
-	i++
-	if i >= len(c.sortedHashes) {
-		i = 0
-	}
 	var b string
-	for i != start {
+	for i = start + 1; i != start; i++ {
+		if i >= len(c.sortedHashes) {
+			i = 0
+		}
 		b = c.circle[c.sortedHashes[i]]
 		if b != a {
 			break
-		}
-		i++
-		if i >= len(c.sortedHashes) {
-			i = 0
 		}
 	}
 	return a, b, nil
 }
 
 func (c *Consistent) hashKey(key string) uint32 {
+	if len(key) < 64 {
+		copy(c.scratch[:], key)
+		return crc32.ChecksumIEEE(c.scratch[:len(key)])
+	}
 	return crc32.ChecksumIEEE([]byte(key))
 }
 
 func (c *Consistent) updateSortedHashes() {
-	hashes := uints(nil)
+	hashes := c.sortedHashes[:0]
+	//reallocate if we're holding on to too much (1/4th)
+	if cap(c.sortedHashes)/(c.NumberOfReplicas*4) > len(c.circle) {
+		hashes = nil
+	}
 	for k := range c.circle {
 		hashes = append(hashes, k)
 	}
 	sort.Sort(hashes)
 	c.sortedHashes = hashes
 }
-
