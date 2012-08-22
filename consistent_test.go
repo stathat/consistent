@@ -267,7 +267,65 @@ func TestGetTwoOnlyOneInCircle(t *testing.T) {
 	}
 }
 
-// allocBytes returns the number of bytes allocated by invoking f. 
+func TestSet(t *testing.T) {
+	x := New()
+	x.Add("abc")
+	x.Add("def")
+	x.Add("ghi")
+	x.Set([]string{"jkl", "mno"})
+	if x.count != 2 {
+		t.Errorf("expected 2 elts, got %d", x.count)
+	}
+	a, b, err := x.GetTwo("qwerqwerwqer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a != "jkl" && a != "mno" {
+		t.Errorf("expected jkl or mno, got %s", a)
+	}
+	if b != "jkl" && b != "mno" {
+		t.Errorf("expected jkl or mno, got %s", b)
+	}
+	if a == b {
+		t.Errorf("expected a != b, they were both %s", a)
+	}
+	x.Set([]string{"pqr", "mno"})
+	if x.count != 2 {
+		t.Errorf("expected 2 elts, got %d", x.count)
+	}
+	a, b, err = x.GetTwo("qwerqwerwqer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a != "pqr" && a != "mno" {
+		t.Errorf("expected jkl or mno, got %s", a)
+	}
+	if b != "pqr" && b != "mno" {
+		t.Errorf("expected jkl or mno, got %s", b)
+	}
+	if a == b {
+		t.Errorf("expected a != b, they were both %s", a)
+	}
+	x.Set([]string{"pqr", "mno"})
+	if x.count != 2 {
+		t.Errorf("expected 2 elts, got %d", x.count)
+	}
+	a, b, err = x.GetTwo("qwerqwerwqer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a != "pqr" && a != "mno" {
+		t.Errorf("expected jkl or mno, got %s", a)
+	}
+	if b != "pqr" && b != "mno" {
+		t.Errorf("expected jkl or mno, got %s", b)
+	}
+	if a == b {
+		t.Errorf("expected a != b, they were both %s", a)
+	}
+}
+
+// allocBytes returns the number of bytes allocated by invoking f.
 func allocBytes(f func()) uint64 {
 	var stats runtime.MemStats
 	runtime.ReadMemStats(&stats)

@@ -40,6 +40,7 @@ var ErrEmptyCircle = errors.New("empty circle")
 // Consistent holds the information about the members of the consistent hash circle.
 type Consistent struct {
 	circle           map[uint32]string
+	members          map[string]bool
 	sortedHashes     uints
 	NumberOfReplicas int
 	count            int64
@@ -53,6 +54,7 @@ func New() *Consistent {
 	c := new(Consistent)
 	c.NumberOfReplicas = 20
 	c.circle = make(map[uint32]string)
+	c.members = make(map[string]bool)
 	return c
 }
 
@@ -66,6 +68,7 @@ func (c *Consistent) Add(elt string) {
 	for i := 0; i < c.NumberOfReplicas; i++ {
 		c.circle[c.hashKey(c.eltKey(elt, i))] = elt
 	}
+	c.members[elt] = true
 	c.updateSortedHashes()
 	c.count++
 }
@@ -75,8 +78,32 @@ func (c *Consistent) Remove(elt string) {
 	for i := 0; i < c.NumberOfReplicas; i++ {
 		delete(c.circle, c.hashKey(c.eltKey(elt, i)))
 	}
+	delete(c.members, elt)
 	c.updateSortedHashes()
 	c.count--
+}
+
+// Set sets all the elements in the hash.  If there are existing elements not present in elts, they will be removed.
+func (c *Consistent) Set(elts []string) {
+	for k := range c.members {
+		found := false
+		for _, v := range elts {
+			if k == v {
+				found = true
+				break
+			}
+		}
+		if !found {
+			c.Remove(k)
+		}
+	}
+	for _, v := range elts {
+		_, exists := c.members[v]
+		if exists {
+			continue
+		}
+		c.Add(v)
+	}
 }
 
 // Get returns an element close to where name hashes to in the circle.
