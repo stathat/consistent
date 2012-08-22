@@ -106,6 +106,14 @@ func (c *Consistent) Set(elts []string) {
 	}
 }
 
+func (c *Consistent) Members() []string {
+	var m []string
+	for k := range c.members {
+		m = append(m, k)
+	}
+	return m
+}
+
 // Get returns an element close to where name hashes to in the circle.
 func (c *Consistent) Get(name string) (string, error) {
 	if len(c.circle) == 0 {
