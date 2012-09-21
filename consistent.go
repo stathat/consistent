@@ -1,3 +1,7 @@
+// Copyright (C) 2012 Numerotron Inc.
+// Use of this source code is governed by an MIT-style license
+// that can be found in the LICENSE file.
+
 // Package consistent provides a consistent hashing function.
 //
 // Consistent hashing is often used to distribute requests to a changing set of servers.  For example,
