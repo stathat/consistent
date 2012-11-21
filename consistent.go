@@ -25,6 +25,7 @@ import (
 	"hash/crc32"
 	"sort"
 	"strconv"
+	"sync"
 )
 
 type uints []uint32
@@ -49,6 +50,7 @@ type Consistent struct {
 	NumberOfReplicas int
 	count            int64
 	scratch          [64]byte
+        sync.RWMutex
 }
 
 // New creates a new Consistent object with a default setting of 20 replicas for each entry.
@@ -69,6 +71,8 @@ func (c *Consistent) eltKey(elt string, idx int) string {
 
 // Add inserts a string element in the consistent hash.
 func (c *Consistent) Add(elt string) {
+        c.Lock()
+        defer c.Unlock()
 	for i := 0; i < c.NumberOfReplicas; i++ {
 		c.circle[c.hashKey(c.eltKey(elt, i))] = elt
 	}
@@ -79,6 +83,8 @@ func (c *Consistent) Add(elt string) {
 
 // Remove removes an element from the hash.
 func (c *Consistent) Remove(elt string) {
+        c.Lock()
+        defer c.Unlock()
 	for i := 0; i < c.NumberOfReplicas; i++ {
 		delete(c.circle, c.hashKey(c.eltKey(elt, i)))
 	}
@@ -89,7 +95,8 @@ func (c *Consistent) Remove(elt string) {
 
 // Set sets all the elements in the hash.  If there are existing elements not present in elts, they will be removed.
 func (c *Consistent) Set(elts []string) {
-	for k := range c.members {
+        mems := c.Members()
+	for _, k := range mems {
 		found := false
 		for _, v := range elts {
 			if k == v {
@@ -102,7 +109,9 @@ func (c *Consistent) Set(elts []string) {
 		}
 	}
 	for _, v := range elts {
+                c.RLock()
 		_, exists := c.members[v]
+                c.RUnlock()
 		if exists {
 			continue
 		}
@@ -111,6 +120,8 @@ func (c *Consistent) Set(elts []string) {
 }
 
 func (c *Consistent) Members() []string {
+        c.RLock()
+        defer c.RUnlock()
 	var m []string
 	for k := range c.members {
 		m = append(m, k)
@@ -120,6 +131,8 @@ func (c *Consistent) Members() []string {
 
 // Get returns an element close to where name hashes to in the circle.
 func (c *Consistent) Get(name string) (string, error) {
+        c.RLock()
+        defer c.RUnlock()
 	if len(c.circle) == 0 {
 		return "", ErrEmptyCircle
 	}
@@ -141,6 +154,8 @@ func (c *Consistent) search(key uint32) (i int) {
 
 // GetTwo returns the two closest distinct elements to the name input in the circle.
 func (c *Consistent) GetTwo(name string) (string, string, error) {
+        c.RLock()
+        defer c.RUnlock()
 	if len(c.circle) == 0 {
 		return "", "", ErrEmptyCircle
 	}

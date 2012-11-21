@@ -253,6 +253,36 @@ func TestGetTwoQuick(t *testing.T) {
 	}
 }
 
+func TestGetTwoOnlyTwoQuick(t *testing.T) {
+	x := New()
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	f := func(s string) bool {
+		a, b, err := x.GetTwo(s)
+		if err != nil {
+			t.Logf("error: %q", err)
+			return false
+		}
+		if a == b {
+			t.Logf("a == b")
+			return false
+		}
+		if a != "abcdefg" && a != "hijklmn" {
+			t.Logf("invalid a: %q", a)
+			return false
+		}
+
+		if b != "abcdefg" && b != "hijklmn" {
+			t.Logf("invalid b: %q", b)
+			return false
+		}
+		return true
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestGetTwoOnlyOneInCircle(t *testing.T) {
 	x := New()
 	x.Add("abcdefg")
