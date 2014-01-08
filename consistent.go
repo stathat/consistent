@@ -213,7 +213,7 @@ func (c *Consistent) GetN(name string, n int) ([]string, error) {
 			i = 0
 		}
 		elem = c.circle[c.sortedHashes[i]]
-		if !slice_contains_member(res, elem) {
+		if !sliceContainsMember(res, elem) {
 			res = append(res, elem)
 		}
 		if len(res) == n {
@@ -246,7 +246,7 @@ func (c *Consistent) updateSortedHashes() {
 	c.sortedHashes = hashes
 }
 
-func slice_contains_member(set []string, member string) bool {
+func sliceContainsMember(set []string, member string) bool {
 	for _, m := range set {
 		if m == member {
 			return true
