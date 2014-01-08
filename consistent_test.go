@@ -301,6 +301,174 @@ func TestGetTwoOnlyOneInCircle(t *testing.T) {
 	}
 }
 
+func TestGetN(t *testing.T) {
+	x := New()
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	x.Add("opqrstu")
+	members, err := x.GetN("99999999", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(members) != 3 {
+		t.Errorf("expected 3 members instead of %d", len(members))
+	}
+	if members[0] != "abcdefg" {
+		t.Errorf("wrong members[0]: %q", members[0])
+	}
+	if members[1] != "opqrstu" {
+		t.Errorf("wrong members[1]: %q", members[1])
+	}
+	if members[2] != "hijklmn" {
+		t.Errorf("wrong members[2]: %q", members[2])
+	}
+}
+
+func TestGetNLess(t *testing.T) {
+	x := New()
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	x.Add("opqrstu")
+	members, err := x.GetN("99999999", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(members) != 2 {
+		t.Errorf("expected 2 members instead of %d", len(members))
+	}
+	if members[0] != "abcdefg" {
+		t.Errorf("wrong members[0]: %q", members[0])
+	}
+	if members[1] != "opqrstu" {
+		t.Errorf("wrong members[1]: %q", members[1])
+	}
+}
+
+func TestGetNMore(t *testing.T) {
+	x := New()
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	x.Add("opqrstu")
+	members, err := x.GetN("99999999", 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(members) != 3 {
+		t.Errorf("expected 3 members instead of %d", len(members))
+	}
+	if members[0] != "abcdefg" {
+		t.Errorf("wrong members[0]: %q", members[0])
+	}
+	if members[1] != "opqrstu" {
+		t.Errorf("wrong members[1]: %q", members[1])
+	}
+	if members[2] != "hijklmn" {
+		t.Errorf("wrong members[2]: %q", members[2])
+	}
+}
+
+func TestGetNQuick(t *testing.T) {
+	x := New()
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	x.Add("opqrstu")
+	f := func(s string) bool {
+		members, err := x.GetN(s, 3)
+		if err != nil {
+			t.Logf("error: %q", err)
+			return false
+		}
+		if len(members) != 3 {
+			t.Logf("expected 3 members instead of %d", len(members))
+			return false
+		}
+		set := make(map[string]bool, 4)
+		for _, member := range members {
+			if set[member] {
+				t.Logf("duplicate error")
+				return false
+			}
+			set[member] = true
+			if member != "abcdefg" && member != "hijklmn" && member != "opqrstu" {
+				t.Logf("invalid member: %q", member)
+				return false
+			}
+		}
+		return true
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGetNLessQuick(t *testing.T) {
+	x := New()
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	x.Add("opqrstu")
+	f := func(s string) bool {
+		members, err := x.GetN(s, 2)
+		if err != nil {
+			t.Logf("error: %q", err)
+			return false
+		}
+		if len(members) != 2 {
+			t.Logf("expected 2 members instead of %d", len(members))
+			return false
+		}
+		set := make(map[string]bool, 4)
+		for _, member := range members {
+			if set[member] {
+				t.Logf("duplicate error")
+				return false
+			}
+			set[member] = true
+			if member != "abcdefg" && member != "hijklmn" && member != "opqrstu" {
+				t.Logf("invalid member: %q", member)
+				return false
+			}
+		}
+		return true
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGetNMoreQuick(t *testing.T) {
+	x := New()
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	x.Add("opqrstu")
+	f := func(s string) bool {
+		members, err := x.GetN(s, 5)
+		if err != nil {
+			t.Logf("error: %q", err)
+			return false
+		}
+		if len(members) != 3 {
+			t.Logf("expected 3 members instead of %d", len(members))
+			return false
+		}
+		set := make(map[string]bool, 4)
+		for _, member := range members {
+			if set[member] {
+				t.Logf("duplicate error")
+				return false
+			}
+			set[member] = true
+			if member != "abcdefg" && member != "hijklmn" && member != "opqrstu" {
+				t.Logf("invalid member: %q", member)
+				return false
+			}
+		}
+		return true
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSet(t *testing.T) {
 	x := New()
 	x.Add("abc")
@@ -443,5 +611,45 @@ func BenchmarkGetLarge(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		x.Get("nothing")
+	}
+}
+
+func BenchmarkGetN(b *testing.B) {
+	x := New()
+	x.Add("nothing")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		x.GetN("nothing", 3)
+	}
+}
+
+func BenchmarkGetNLarge(b *testing.B) {
+	x := New()
+	for i := 0; i < 10; i++ {
+		x.Add("start" + strconv.Itoa(i))
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		x.GetN("nothing", 3)
+	}
+}
+
+func BenchmarkGetTwo(b *testing.B) {
+	x := New()
+	x.Add("nothing")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		x.GetTwo("nothing")
+	}
+}
+
+func BenchmarkGetTwoLarge(b *testing.B) {
+	x := New()
+	for i := 0; i < 10; i++ {
+		x.Add("start" + strconv.Itoa(i))
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		x.GetTwo("nothing")
 	}
 }
