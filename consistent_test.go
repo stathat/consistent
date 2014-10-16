@@ -5,6 +5,8 @@
 package consistent
 
 import (
+	"bufio"
+	"os"
 	"runtime"
 	"sort"
 	"strconv"
@@ -14,7 +16,7 @@ import (
 
 func checkNum(num, expected int, t *testing.T) {
 	if num != expected {
-		t.Errorf("expected %d, got %d", expected, num)
+		t.Errorf("got %d, expected %d", num, expected)
 	}
 }
 
@@ -85,31 +87,30 @@ func TestGetSingle(t *testing.T) {
 	}
 }
 
+type gtest struct {
+	in  string
+	out string
+}
+
+var gmtests = []gtest{
+	{"ggg", "abcdefg"},
+	{"hhh", "opqrstu"},
+	{"iiiii", "hijklmn"},
+}
+
 func TestGetMultiple(t *testing.T) {
 	x := New()
 	x.Add("abcdefg")
 	x.Add("hijklmn")
 	x.Add("opqrstu")
-	result, err := x.Get("ggg")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "opqrstu" {
-		t.Errorf("expected 'opqrstu', got %q", result)
-	}
-	result, err = x.Get("hhh")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "abcdefg" {
-		t.Errorf("expected 'abcdefg', got %q", result)
-	}
-	result, err = x.Get("iiiiii")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "hijklmn" {
-		t.Errorf("expected 'hijklmn', got %q", result)
+	for i, v := range gmtests {
+		result, err := x.Get(v.in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result != v.out {
+			t.Errorf("%d. got %q, expected %q", i, result, v.out)
+		}
 	}
 }
 
@@ -132,53 +133,41 @@ func TestGetMultipleQuick(t *testing.T) {
 	}
 }
 
+var rtestsBefore = []gtest{
+	{"ggg", "abcdefg"},
+	{"hhh", "opqrstu"},
+	{"iiiii", "hijklmn"},
+}
+
+var rtestsAfter = []gtest{
+	{"ggg", "abcdefg"},
+	{"hhh", "opqrstu"},
+	{"iiiii", "opqrstu"},
+}
+
 func TestGetMultipleRemove(t *testing.T) {
 	x := New()
 	x.Add("abcdefg")
 	x.Add("hijklmn")
 	x.Add("opqrstu")
-	result, err := x.Get("ggg")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "opqrstu" {
-		t.Errorf("expected 'opqrstu', got %q", result)
-	}
-	result, err = x.Get("hhh")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "abcdefg" {
-		t.Errorf("expected 'abcdefg', got %q", result)
-	}
-	result, err = x.Get("iiiiii")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "hijklmn" {
-		t.Errorf("expected 'hijklmn', got %q", result)
+	for i, v := range rtestsBefore {
+		result, err := x.Get(v.in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result != v.out {
+			t.Errorf("%d. got %q, expected %q before rm", i, result, v.out)
+		}
 	}
 	x.Remove("hijklmn")
-	result, err = x.Get("ggg")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "opqrstu" {
-		t.Errorf("expected 'opqrstu', got %q", result)
-	}
-	result, err = x.Get("hhh")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "abcdefg" {
-		t.Errorf("expected 'abcdefg', got %q", result)
-	}
-	result, err = x.Get("iiiiii")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result != "opqrstu" {
-		t.Errorf("expected 'opqrstu', got %q", result)
+	for i, v := range rtestsAfter {
+		result, err := x.Get(v.in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result != v.out {
+			t.Errorf("%d. got %q, expected %q after rm", i, result, v.out)
+		}
 	}
 }
 
@@ -217,7 +206,7 @@ func TestGetTwo(t *testing.T) {
 	if a != "abcdefg" {
 		t.Errorf("wrong a: %q", a)
 	}
-	if b != "opqrstu" {
+	if b != "hijklmn" {
 		t.Errorf("wrong b: %q", b)
 	}
 }
@@ -306,17 +295,17 @@ func TestGetN(t *testing.T) {
 	x.Add("abcdefg")
 	x.Add("hijklmn")
 	x.Add("opqrstu")
-	members, err := x.GetN("99999999", 3)
+	members, err := x.GetN("9999999", 3)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(members) != 3 {
 		t.Errorf("expected 3 members instead of %d", len(members))
 	}
-	if members[0] != "abcdefg" {
+	if members[0] != "opqrstu" {
 		t.Errorf("wrong members[0]: %q", members[0])
 	}
-	if members[1] != "opqrstu" {
+	if members[1] != "abcdefg" {
 		t.Errorf("wrong members[1]: %q", members[1])
 	}
 	if members[2] != "hijklmn" {
@@ -339,7 +328,7 @@ func TestGetNLess(t *testing.T) {
 	if members[0] != "abcdefg" {
 		t.Errorf("wrong members[0]: %q", members[0])
 	}
-	if members[1] != "opqrstu" {
+	if members[1] != "hijklmn" {
 		t.Errorf("wrong members[1]: %q", members[1])
 	}
 }
@@ -349,17 +338,17 @@ func TestGetNMore(t *testing.T) {
 	x.Add("abcdefg")
 	x.Add("hijklmn")
 	x.Add("opqrstu")
-	members, err := x.GetN("99999999", 5)
+	members, err := x.GetN("9999999", 5)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(members) != 3 {
 		t.Errorf("expected 3 members instead of %d", len(members))
 	}
-	if members[0] != "abcdefg" {
+	if members[0] != "opqrstu" {
 		t.Errorf("wrong members[0]: %q", members[0])
 	}
-	if members[1] != "opqrstu" {
+	if members[1] != "abcdefg" {
 		t.Errorf("wrong members[1]: %q", members[1])
 	}
 	if members[2] != "hijklmn" {
@@ -652,4 +641,62 @@ func BenchmarkGetTwoLarge(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		x.GetTwo("nothing")
 	}
+}
+
+// from @edsrzf on github:
+func TestAddCollision(t *testing.T) {
+	// These two strings produce several crc32 collisions after "|i" is
+	// appended added by Consistent.eltKey.
+	const s1 = "abear"
+	const s2 = "solidiform"
+	x := New()
+	x.Add(s1)
+	x.Add(s2)
+	elt1, err := x.Get("abear")
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	y := New()
+	// add elements in opposite order
+	y.Add(s2)
+	y.Add(s1)
+	elt2, err := y.Get(s1)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if elt1 != elt2 {
+		t.Error(elt1, "and", elt2, "should be equal")
+	}
+}
+
+// inspired by @or-else on github
+func TestCollisionsCRC(t *testing.T) {
+	t.SkipNow()
+	c := New()
+	f, err := os.Open("/usr/share/dict/words")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	found := make(map[uint32]string)
+	scanner := bufio.NewScanner(f)
+	count := 0
+	for scanner.Scan() {
+		word := scanner.Text()
+		for i := 0; i < c.NumberOfReplicas; i++ {
+			ekey := c.eltKey(word, i)
+			// ekey := word + "|" + strconv.Itoa(i)
+			k := c.hashKey(ekey)
+			exist, ok := found[k]
+			if ok {
+				t.Logf("found collision: %s, %s", ekey, exist)
+				count++
+			} else {
+				found[k] = ekey
+			}
+		}
+	}
+	t.Logf("number of collisions: %d", count)
 }

@@ -66,7 +66,8 @@ func New() *Consistent {
 
 // eltKey generates a string key for an element with an index.
 func (c *Consistent) eltKey(elt string, idx int) string {
-	return elt + "|" + strconv.Itoa(idx)
+	// return elt + "|" + strconv.Itoa(idx)
+	return strconv.Itoa(idx) + elt
 }
 
 // Add inserts a string element in the consistent hash.
