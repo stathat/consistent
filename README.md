@@ -11,7 +11,7 @@ Installation
 Examples
 --------
 
-Look at the godoc.
+Look at the [godoc](http://godoc.org/github.com/stathat/consistent).
 
 Status
 ------
