@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Numerotron Inc.
+// Copyright (C) 2012-2014 Numerotron Inc.
 // Use of this source code is governed by an MIT-style license
 // that can be found in the LICENSE file.
 
@@ -6,12 +6,15 @@ package consistent
 
 import (
 	"bufio"
+	"math/rand"
 	"os"
 	"runtime"
 	"sort"
 	"strconv"
+	"sync"
 	"testing"
 	"testing/quick"
+	"time"
 )
 
 func checkNum(num, expected int, t *testing.T) {
@@ -699,4 +702,41 @@ func TestCollisionsCRC(t *testing.T) {
 		}
 	}
 	t.Logf("number of collisions: %d", count)
+}
+
+func TestConcurrentGetSet(t *testing.T) {
+	x := New()
+	x.Set([]string{"abc", "def", "ghi", "jkl", "mno"})
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			for i := 0; i < 1000; i++ {
+				x.Set([]string{"abc", "def", "ghi", "jkl", "mno"})
+				time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
+				x.Set([]string{"pqr", "stu", "vwx"})
+				time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
+			}
+			wg.Done()
+		}()
+	}
+
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			for i := 0; i < 1000; i++ {
+				a, err := x.Get("xxxxxxx")
+				if err != nil {
+					t.Error(err)
+				}
+				if a != "def" && a != "vwx" {
+					t.Errorf("got %s, expected abc", a)
+				}
+				time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 }

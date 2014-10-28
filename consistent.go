@@ -74,6 +74,19 @@ func (c *Consistent) eltKey(elt string, idx int) string {
 func (c *Consistent) Add(elt string) {
 	c.Lock()
 	defer c.Unlock()
+	/*
+		for i := 0; i < c.NumberOfReplicas; i++ {
+			c.circle[c.hashKey(c.eltKey(elt, i))] = elt
+		}
+		c.members[elt] = true
+		c.updateSortedHashes()
+		c.count++
+	*/
+	c.add(elt)
+}
+
+// need c.Lock() before calling
+func (c *Consistent) add(elt string) {
 	for i := 0; i < c.NumberOfReplicas; i++ {
 		c.circle[c.hashKey(c.eltKey(elt, i))] = elt
 	}
@@ -86,6 +99,19 @@ func (c *Consistent) Add(elt string) {
 func (c *Consistent) Remove(elt string) {
 	c.Lock()
 	defer c.Unlock()
+	/*
+		for i := 0; i < c.NumberOfReplicas; i++ {
+			delete(c.circle, c.hashKey(c.eltKey(elt, i)))
+		}
+		delete(c.members, elt)
+		c.updateSortedHashes()
+		c.count--
+	*/
+	c.remove(elt)
+}
+
+// need c.Lock() before calling
+func (c *Consistent) remove(elt string) {
 	for i := 0; i < c.NumberOfReplicas; i++ {
 		delete(c.circle, c.hashKey(c.eltKey(elt, i)))
 	}
@@ -95,6 +121,7 @@ func (c *Consistent) Remove(elt string) {
 }
 
 // Set sets all the elements in the hash.  If there are existing elements not present in elts, they will be removed.
+/*
 func (c *Consistent) Set(elts []string) {
 	mems := c.Members()
 	for _, k := range mems {
@@ -117,6 +144,33 @@ func (c *Consistent) Set(elts []string) {
 			continue
 		}
 		c.Add(v)
+	}
+}
+*/
+
+// Set sets all the elements in the hash.  If there are existing elements not
+// present in elts, they will be removed.
+func (c *Consistent) Set(elts []string) {
+	c.Lock()
+	defer c.Unlock()
+	for k := range c.members {
+		found := false
+		for _, v := range elts {
+			if k == v {
+				found = true
+				break
+			}
+		}
+		if !found {
+			c.remove(k)
+		}
+	}
+	for _, v := range elts {
+		_, exists := c.members[v]
+		if exists {
+			continue
+		}
+		c.add(v)
 	}
 }
 
