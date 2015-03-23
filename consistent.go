@@ -18,7 +18,7 @@
 //
 // Read more about consistent hashing on wikipedia:  http://en.wikipedia.org/wiki/Consistent_hashing
 //
-package consistent
+package consistent // import "stathat.com/c/consistent"
 
 import (
 	"errors"
