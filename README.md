@@ -6,12 +6,12 @@ Consistent hash package for Go.
 Installation
 ------------
 
-    go get github.com/stathat/consistent
+    go get stathat.com/c/consistent
 
 Examples
 --------
 
-Look at the [godoc](http://godoc.org/github.com/stathat/consistent).
+Look at the [godoc](http://godoc.org/stathat.com/c/consistent).
 
 Status
 ------
@@ -24,9 +24,9 @@ Contact us
 ----------
 
 We'd love to hear from you if you are using `consistent`.
-Get in touch:  [@stat_hat](http://twitter.com/stat_hat) or [contact us here](http://www.stathat.com/docs/contact).
+Get in touch:  [@stathat](http://twitter.com/stathat) or [contact us here](http://www.stathat.com/docs/contact).
 
 About
 -----
 
-Written by Patrick Crosby at [StatHat](http://www.stathat.com).  Twitter:  [@stat_hat](http://twitter.com/stat_hat)
+Written by Patrick Crosby at [StatHat](http://www.stathat.com).  Twitter:  [@stathat](http://twitter.com/stathat)
