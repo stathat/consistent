@@ -5,9 +5,9 @@
 package consistent_test
 
 import (
-	"../consistent"
 	"fmt"
 	"log"
+	"stathat.com/c/consistent"
 )
 
 func ExampleNew() {
