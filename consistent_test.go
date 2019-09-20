@@ -6,6 +6,7 @@ package consistent
 
 import (
 	"bufio"
+	"encoding/base64"
 	"math/rand"
 	"os"
 	"runtime"
@@ -739,4 +740,53 @@ func TestConcurrentGetSet(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestDistributionFnv(t *testing.T) {
+	x := New()
+	x.UseFnv = true
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	x.Add("opqrstu")
+	dist := make(map[string]int)
+	g := make([]byte, 12)
+	for i := 0; i < 10000; i++ {
+		_, err := rand.Read(g)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := base64.StdEncoding.EncodeToString(g)
+		r, err := x.Get(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dist[r] = dist[r] + 1
+	}
+	for k, v := range dist {
+		t.Logf("%s: %d", k, v)
+	}
+}
+
+func TestDistributionCRC(t *testing.T) {
+	x := New()
+	x.Add("abcdefg")
+	x.Add("hijklmn")
+	x.Add("opqrstu")
+	dist := make(map[string]int)
+	g := make([]byte, 12)
+	for i := 0; i < 10000; i++ {
+		_, err := rand.Read(g)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := base64.StdEncoding.EncodeToString(g)
+		r, err := x.Get(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dist[r] = dist[r] + 1
+	}
+	for k, v := range dist {
+		t.Logf("%s: %d", k, v)
+	}
 }

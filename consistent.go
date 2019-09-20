@@ -23,6 +23,7 @@ package consistent // import "stathat.com/c/consistent"
 import (
 	"errors"
 	"hash/crc32"
+	"hash/fnv"
 	"sort"
 	"strconv"
 	"sync"
@@ -50,6 +51,7 @@ type Consistent struct {
 	NumberOfReplicas int
 	count            int64
 	scratch          [64]byte
+	UseFnv           bool
 	sync.RWMutex
 }
 
@@ -236,12 +238,25 @@ func (c *Consistent) GetN(name string, n int) ([]string, error) {
 }
 
 func (c *Consistent) hashKey(key string) uint32 {
+	if c.UseFnv {
+		return c.hashKeyFnv(key)
+	}
+	return c.hashKeyCRC32(key)
+}
+
+func (c *Consistent) hashKeyCRC32(key string) uint32 {
 	if len(key) < 64 {
 		var scratch [64]byte
 		copy(scratch[:], key)
 		return crc32.ChecksumIEEE(scratch[:len(key)])
 	}
 	return crc32.ChecksumIEEE([]byte(key))
+}
+
+func (c *Consistent) hashKeyFnv(key string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	return h.Sum32()
 }
 
 func (c *Consistent) updateSortedHashes() {
